@@ -1,4 +1,4 @@
-__version__ = '0.1'
+__version__ = '0.2'
 
 class StateException(Exception):
     pass
@@ -25,7 +25,7 @@ class StateMachine(object):
     :meth:`on_enter_<new_state>` methods.
     
     Both :meth:`on_leave_<current_state>` and :meth:`on_enter_<new_state>` receive
-    a ``from_state`` and ``to_state`` keyword argument. If any method returns
+    a ``from_state`` and ``to_state`` positional argument. If any method returns
     false the transition is aborted.
     
     Raises :class:`StateException` on an illegal transition. 
@@ -83,18 +83,18 @@ class StateMachine(object):
             [to_state, args, kwargs] = self._next.pop(0)
             return self._transition(to_state, *args, **kwargs)
         except IndexError:
-            raise StateError, "No next state available"
+            raise StateException, "No next state available"
     
     def _leave_state(self, from_state, to_state, *args, **kwargs):
         on_leave = getattr(self, 'on_leave_%s' % from_state, None)        
         if callable(on_leave):
-            return on_leave(from_state=from_state, to_state=to_state, *args, **kwargs)
+            return on_leave(from_state, to_state, *args, **kwargs)
         return True
 
     def _enter_state(self, from_state, to_state, *args, **kwargs):
         on_enter = getattr(self, 'on_enter_%s' % to_state, None)
         if callable(on_enter):
-            return on_enter(from_state=self.state, to_state=to_state, *args, **kwargs)
+            return on_enter(from_state, to_state, *args, **kwargs)
         return True
 
     def on_transition(self, *args, **kwargs):
