@@ -79,8 +79,11 @@ class StateMachine(object):
         self._next.append((state, args, kwargs))                
 
     def next(self):
-        [to_state, args, kwargs] = self._next.pop(0)
-        return self._transition(to_state, *args, **kwargs)
+        try:
+            [to_state, args, kwargs] = self._next.pop(0)
+            return self._transition(to_state, *args, **kwargs)
+        except IndexError:
+            raise StateError, "No next state available"
     
     def _leave_state(self, from_state, to_state, *args, **kwargs):
         on_leave = getattr(self, 'on_leave_%s' % from_state, None)        
@@ -93,6 +96,9 @@ class StateMachine(object):
         if callable(on_enter):
             return on_enter(from_state=self.state, to_state=to_state, *args, **kwargs)
         return True
+
+    def on_transition(self, *args, **kwargs):
+        pass
     
     def _transition(self, new_state, *args, **kwargs):
         if self.cannot(new_state):
@@ -102,6 +108,7 @@ class StateMachine(object):
         abort = abort or self._enter_state(self.state, new_state, *args, **kwargs) == False
         
         if not abort:
+            self.on_transition(self.state, new_state, *args, **kwargs)  
             self.state = new_state
         return not abort
 
